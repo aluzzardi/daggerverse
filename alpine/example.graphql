@@ -1,0 +1,13 @@
+{
+  alpine {
+    withVersion(version: "3.18.2") {
+      withPackage(name: "curl") {
+        container {
+          withExec(args: ["curl", "https://dagger.io"]) {
+            stdout
+          }
+        }
+      }
+    }
+  }
+}
