@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  # Enable manual trigger for easy debugging
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cat ${{ github.event_path}}
+      - run: echo ${{ github.event_name }}
+
+      - uses: dagger/dagger-for-github@v5
+        with:
+          verb: call
+          module: ./github-comment
+          args: |
+            --github-token ${{ github.token	}} \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --commit ${{ github.event.pull_request.head.sha }} \
+            create --body "Hello world!" \
+
+      - uses: dagger/dagger-for-github@v5
+        with:
+          verb: call
+          module: ./github-comment
+          args: |
+            --github-token ${{ github.token	}} \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --commit ${{ github.event.pull_request.head.sha }} \
+            delete \
