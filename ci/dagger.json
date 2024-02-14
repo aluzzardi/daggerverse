@@ -1,0 +1,12 @@
+{
+  "name": "github-ci",
+  "sdk": "go",
+  "dependencies": [
+    {
+      "name": "github-comment",
+      "source": "../github-comment"
+    }
+  ],
+  "source": ".",
+  "engineVersion": "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+}
