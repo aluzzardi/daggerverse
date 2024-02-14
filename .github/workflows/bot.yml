@@ -1,11 +1,11 @@
-name: CI
+name: Bot
 
 on:
   issue_comment:
     types: [created, deleted]
 
 jobs:
-  test:
+  handle:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
