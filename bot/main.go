@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v59/github"
@@ -21,21 +22,38 @@ func (m *GithubCi) Handle(ctx context.Context, githubToken *Secret, eventName st
 
 	switch ev := payload.(type) {
 	case *github.IssueCommentEvent:
+		comment := dag.GithubComment(
+			githubToken,
+			ev.GetRepo().GetOwner().GetLogin(),
+			ev.GetRepo().GetName(),
+			GithubCommentOpts{
+				Issue: ev.Issue.GetNumber(),
+			},
+		)
+
 		switch ev.GetAction() {
 		case "created":
-			switch {
-			case strings.HasPrefix(ev.Comment.GetBody(), "!echo "):
-				comment := dag.GithubComment(
-					githubToken,
-					ev.GetRepo().GetOwner().GetLogin(),
-					ev.GetRepo().GetName(),
-					GithubCommentOpts{
-						Issue: ev.Issue.GetNumber(),
-					},
-				)
-				if _, err := comment.Create(ctx, strings.TrimPrefix(ev.Comment.GetBody(), "!echo ")); err != nil {
+			parts := strings.SplitN(ev.Comment.GetBody(), " ", 2)
+			if len(parts) != 2 {
+				return nil
+			}
+			command, args := parts[0], parts[1]
+			switch command {
+			case "!echo":
+				if _, err := comment.Create(ctx, args); err != nil {
 					return err
 				}
+			case "!sh":
+				stdout, err := dag.
+					Container().
+					From("alpine").
+					WithExec([]string{"sh", "-c", args}).
+					Stdout(ctx)
+				if err != nil {
+					_, err = comment.Create(ctx, fmt.Sprintf("`%s`: %s", args, err.Error()))
+					return err
+				}
+				_, err = comment.Create(ctx, fmt.Sprintf("`$ %s`\n\n```%s```", args, stdout))
 			}
 		}
 	}
