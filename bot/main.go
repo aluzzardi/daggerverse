@@ -22,15 +22,6 @@ func (m *GithubCi) Handle(ctx context.Context, githubToken *Secret, eventName st
 
 	switch ev := payload.(type) {
 	case *github.IssueCommentEvent:
-		comment := dag.GithubComment(
-			githubToken,
-			ev.GetRepo().GetOwner().GetLogin(),
-			ev.GetRepo().GetName(),
-			GithubCommentOpts{
-				Issue: ev.Issue.GetNumber(),
-			},
-		)
-
 		switch ev.GetAction() {
 		case "created":
 			parts := strings.SplitN(ev.Comment.GetBody(), " ", 2)
@@ -38,6 +29,16 @@ func (m *GithubCi) Handle(ctx context.Context, githubToken *Secret, eventName st
 				return nil
 			}
 			command, args := parts[0], parts[1]
+
+			comment := dag.GithubComment(
+				githubToken,
+				ev.GetRepo().GetOwner().GetLogin(),
+				ev.GetRepo().GetName(),
+				GithubCommentOpts{
+					Issue: ev.Issue.GetNumber(),
+				},
+			)
+
 			switch command {
 			case "!echo":
 				if _, err := comment.Create(ctx, args); err != nil {
