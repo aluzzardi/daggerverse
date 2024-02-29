@@ -21,7 +21,7 @@ func New(
 	ctx context.Context,
 	githubToken *Secret,
 	// +optional
-	// +default=github.com/aluzzardi/daggerverse/github-comment
+	// +default="github.com/aluzzardi/daggerverse/github-comment"
 	messageID string,
 	owner string,
 	repo string,
