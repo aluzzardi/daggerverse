@@ -105,7 +105,7 @@ func (m *GithubComment) findComment(ctx context.Context, ghc *github.Client) (*g
 	return nil, issue, nil
 }
 
-// example usage: "dagger call --github-token env:GITHUB_TOKEN --owner aluzzardi --repo daggerverse --issue 1 comment --body "hello world"
+// example usage: "dagger call --github-token env:GITHUB_TOKEN --owner aluzzardi --repo daggerverse --issue 1 create --body "hello world"
 func (m *GithubComment) Create(ctx context.Context, body string) (*string, error) {
 	ghc, err := m.newClient(ctx)
 	if err != nil {
