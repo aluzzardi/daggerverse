@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"main/internal/dagger"
 	"github.com/google/go-github/v59/github"
 )
 
 type GithubComment struct {
-	GithubToken *Secret
+	GithubToken *dagger.Secret
 	MessageID   string
 	Owner       string
 	Repo        string
@@ -19,7 +20,7 @@ type GithubComment struct {
 
 func New(
 	ctx context.Context,
-	githubToken *Secret,
+	githubToken *dagger.Secret,
 	// +optional
 	// +default="github.com/aluzzardi/daggerverse/github-comment"
 	messageID string,
