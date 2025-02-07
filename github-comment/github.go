@@ -9,35 +9,61 @@ import (
 )
 
 type GithubComment struct {
-	GithubToken *Secret
-	MessageID   string
-	Owner       string
-	Repo        string
-	Issue       int
-	Commit      string
+	GithubToken *Secret // +private
+	MessageID   string  // +private
+	Owner       string  // +private
+	Repo        string  // +private
+	Issue       int     // +private
+	Commit      string  // +private
 }
 
 func New(
 	ctx context.Context,
+	// Github API token
 	githubToken *Secret,
+	// A stable identifier to enable editing the same comment in-place.
+	// The key is included in the comment message but invisible
 	// +optional
 	// +default="github.com/aluzzardi/daggerverse/github-comment"
 	messageID string,
-	owner string,
+	// The github repository
+	// Supported formats:
+	// - github.com/dagger/dagger
+	// - dagger/dagger
+	// - https://github.com/dagger/dagger
+	// - https://github.com/dagger/dagger.git
 	repo string,
+	// Comment on the given github issue
 	// +optional
 	issue int,
+	// Comment on the given commit
 	// +optional
 	commit string,
-) *GithubComment {
+) (*GithubComment, error) {
+	// Strip .git suffix if present
+	repo = strings.TrimSuffix(repo, ".git")
+
+	// Remove https:// or http:// prefix if present
+	repo = strings.TrimPrefix(repo, "https://")
+	repo = strings.TrimPrefix(repo, "http://")
+
+	// Remove github.com/ prefix if present
+	repo = strings.TrimPrefix(repo, "github.com/")
+
+	// Split remaining string into owner/repo
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid repository format: %s", repo)
+	}
+
 	return &GithubComment{
 		GithubToken: githubToken,
 		MessageID:   messageID,
-		Owner:       owner,
-		Repo:        repo,
+		Owner:       parts[0],
+		Repo:        parts[1],
 		Issue:       issue,
 		Commit:      commit,
-	}
+	}, nil
 }
 
 func (m *GithubComment) newClient(ctx context.Context) (*github.Client, error) {
@@ -105,7 +131,7 @@ func (m *GithubComment) findComment(ctx context.Context, ghc *github.Client) (*g
 	return nil, issue, nil
 }
 
-// example usage: "dagger call --github-token env:GITHUB_TOKEN --owner aluzzardi --repo daggerverse --issue 1 comment --body "hello world"
+// Create or update the comment on github
 func (m *GithubComment) Create(ctx context.Context, body string) (*string, error) {
 	ghc, err := m.newClient(ctx)
 	if err != nil {
@@ -132,7 +158,7 @@ func (m *GithubComment) Create(ctx context.Context, body string) (*string, error
 	return comment.HTMLURL, nil
 }
 
-// example usage: "dagger call --github-token env:GITHUB_TOKEN --owner aluzzardi --repo daggerverse --issue 1 delete
+// Delete the comment on github
 func (m *GithubComment) Delete(ctx context.Context) error {
 	ghc, err := m.newClient(ctx)
 	if err != nil {
@@ -151,11 +177,11 @@ func (m *GithubComment) Delete(ctx context.Context) error {
 	return err
 }
 
-// example usage: "dagger call --github-token env:GITHUB_TOKEN --owner aluzzardi --repo daggerverse --issue 1 reaction +1
-// The kind should be one of the following values: "+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", or "eyes".
+// Add an emoji reaction to the comment
 func (m *GithubComment) React(
 	ctx context.Context,
-	//	"+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", or "eyes".
+	// The kind of reaction.
+	// Supported values: "+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", or "eyes".
 	kind string,
 ) error {
 	ghc, err := m.newClient(ctx)
