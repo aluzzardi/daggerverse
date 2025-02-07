@@ -9,12 +9,12 @@ import (
 )
 
 type GithubComment struct {
-	GithubToken *Secret
-	MessageID   string
-	Owner       string
-	Repo        string
-	Issue       int
-	Commit      string
+	GithubToken *Secret // +private
+	MessageID   string  // +private
+	Owner       string  // +private
+	Repo        string  // +private
+	Issue       int     // +private
+	Commit      string  // +private
 }
 
 func New(
