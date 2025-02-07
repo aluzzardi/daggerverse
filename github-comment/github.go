@@ -23,21 +23,42 @@ func New(
 	// +optional
 	// +default="github.com/aluzzardi/daggerverse/github-comment"
 	messageID string,
-	owner string,
+	// The github repository
+	// Supported formats:
+	// - github.com/dagger/dagger
+	// - dagger/dagger
+	// - https://github.com/dagger/dagger
+	// - https://github.com/dagger/dagger.git
 	repo string,
 	// +optional
 	issue int,
 	// +optional
 	commit string,
-) *GithubComment {
+) (*GithubComment, error) {
+	// Strip .git suffix if present
+	repo = strings.TrimSuffix(repo, ".git")
+
+	// Remove https:// or http:// prefix if present
+	repo = strings.TrimPrefix(repo, "https://")
+	repo = strings.TrimPrefix(repo, "http://")
+
+	// Remove github.com/ prefix if present
+	repo = strings.TrimPrefix(repo, "github.com/")
+
+	// Split remaining string into owner/repo
+	parts := strings.Split(repo, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid repository format: %s", repo)
+	}
+
 	return &GithubComment{
 		GithubToken: githubToken,
 		MessageID:   messageID,
-		Owner:       owner,
-		Repo:        repo,
+		Owner:       parts[0],
+		Repo:        parts[1],
 		Issue:       issue,
 		Commit:      commit,
-	}
+	}, nil
 }
 
 func (m *GithubComment) newClient(ctx context.Context) (*github.Client, error) {
